@@ -1,0 +1,10 @@
+# Validated environment: CPython 3.14.7 on Linux.
+# Install dependencies first, then run: python -m pip install --no-deps .
+dill==0.4.1
+numpy==2.5.3
+qiskit==2.4.2
+ruff==0.16.7
+rustworkx==0.18.1
+scipy==1.18.1
+stevedore==5.9.1
+typing_extensions==4.16.0
