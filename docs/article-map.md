@@ -33,14 +33,3 @@ the third with the parity word while writing a fresh carry word. Its inverse rec
 the original operands. The article presents the sum/carry identity; workspace
 accounting here follows the emitted reversible implementation.
 
-## Excluded material
-
-- Thesis presets and command-line aliases.
-- Standalone approximate arbitrary-order QFT and its certification machinery.
-- Standalone Cleve–Watrous, Schönhage–Strassen and unrelated multiplier experiments.
-- Historical resource sweeps, probe runners, plotting/Julia pipelines and datasets.
-- Dense local-unitary and modular-permutation backends, and opaque skeleton circuits.
-- Manuscript sources, PDFs, presentations, existing Git history and user credentials.
-
-Dense arrays occur only in small validation references. Algorithm construction has
-no dependency on the old `experiments` package or the new validation package.
