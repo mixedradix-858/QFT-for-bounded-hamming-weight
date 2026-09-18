@@ -2,9 +2,6 @@
 
 This repository extracts and reorganizes the Python/Qiskit implementation associated
 with *Low-Depth Quantum Fourier Transform Circuits for Bounded-Hamming-Weight Inputs*.
-The input implementation was provided in the local project's `experiments/` directory;
-the article's definitions were checked against `DATE/sections/background.tex`,
-`approach.tex` and `implementation.tex`.
 
 Included source families are `general_mixed_radix.py`, `qiskit_sparse_qft.py`,
 `mosca_zalka.py`, `explicit_primitives.py`, `parallel_arithmetic.py`,
@@ -26,5 +23,3 @@ The mathematical constructions retain their original references:
 - Zhu et al., reversible lookup networks; Vandaele et al., threshold comparisons,
   as cited by the supplied article.
 
-No independent source license was found among the extracted project files.
-This extraction does not assign a new license or alter third-party dependency licenses.
