@@ -5,7 +5,7 @@ Transform Circuits for Bounded-Hamming-Weight Inputs**.
 
 The package implements both the general mixed-radix QFT and its bounded-Hamming-weight
 input construction. Circuit generation, optional simulation and basis transpilation
-are separate operations. The original thesis repository is not a dependency.
+are separate operations.
 
 ## Install
 
@@ -131,8 +131,7 @@ article's terminal measurement path remains available separately.
 
 `--basis native` retains the emitted explicit gates. Native depth counts
 `X`, `CX`, `CCX`, `H`, `P`, `CP`, `RY`, `CRY`, `SWAP` and `Z` as individual gates.
-This is primitive-circuit depth, not a depth obtained by counting large opaque
-subcircuits as single gates.
+
 
 `--basis u-cx` or `--basis rz-sx-x-cx` additionally invokes Qiskit transpilation.
 The original and transpiled counts occupy separate report fields. Compilation
@@ -140,12 +139,6 @@ uses all-to-all connectivity, `--optimization-level` (default 1 when transpiling
 and `--seed` (default 7). No hardware routing or finite fault-tolerant rotation
 synthesis is implied.
 
-The Mosca–Zalka construction uses exact arbitrary rotations mathematically and
-floating-point angles computationally. Its classical success-probability calculation
-is exponential in the local bit width; this prototype does not establish uniform
-polynomial-time circuit generation or the article's asymptotic local-QFT cost.
-Lookup enumeration and explicit circuit materialization can also be large.
-Measured depth is a property of the emitted circuit, not an asymptotic proof.
 
 ## Python API
 
@@ -194,8 +187,6 @@ src/mixed_radix_qft/
   cli.py                       Argument handling and execution
 ```
 
-The source-to-module map and article correspondence are in
-[`docs/source-map.md`](docs/source-map.md) and [`docs/article-map.md`](docs/article-map.md).
 
 ## Validation
 
@@ -211,15 +202,6 @@ and uses a bounded-support simulator, not a dense `2**num_qubits` vector.
 `--max-states` bounds its support; exceeding the cap fails explicitly.
 Simulation is optional and never runs during ordinary circuit generation.
 
-The test suite also checks arithmetic truth tables and inverses, all small general
-DFT columns, promised sparse inputs, local syntheses, ancilla cleanup, the simulator
-against Qiskit, export, invalid option combinations and installed entry points.
-See [`docs/validation.md`](docs/validation.md) for recorded results and limits.
-
-## Attribution
-
-See [`NOTICE.md`](NOTICE.md) for source provenance and mathematical references.
-No new distribution license has been assigned to the extracted source.
 
 For the exact Linux/CPython environment used during extraction, see
 `requirements-lock.txt`. Install it before `python -m pip install --no-deps .`;
