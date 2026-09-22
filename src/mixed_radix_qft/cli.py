@@ -33,7 +33,14 @@ def parser() -> argparse.ArgumentParser:
     )
     result.add_argument("--weighted-sum", choices=("wallace-qfa2", "cuccaro"))
     result.add_argument(
-        "--decoder", choices=("lookup", "lookup-projected", "crt-inverse", "crt-kogge-stone")
+        "--decoder",
+        choices=(
+            "lookup",
+            "lookup-projected",
+            "crt-inverse",
+            "crt-kogge-stone",
+            "crt-wallace-kogge-stone",
+        ),
     )
     result.add_argument("--reduction", choices=("cuccaro", "prefix"))
     result.add_argument("--cleanup", choices=("local", "deferred"))

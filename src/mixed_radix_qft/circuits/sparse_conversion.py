@@ -44,13 +44,14 @@ def build_architecture_fused_conversion(
     )
     x_register = circuit.qregs[0]
     y_register = circuit.qregs[1]
-    if decoder in {"crt-inverse", "crt-kogge-stone"}:
+    if decoder in {"crt-inverse", "crt-kogge-stone", "crt-wallace-kogge-stone"}:
         _append_crt_inverse_decoder_xor(
             circuit,
             y_register,
             x_register,
             config,
-            prefix="kogge-stone" if decoder == "crt-kogge-stone" else "sklansky",
+            prefix="sklansky" if decoder == "crt-inverse" else "kogge-stone",
+            sum_backend="wallace-qfa2" if decoder == "crt-wallace-kogge-stone" else "prefix-tree",
         )
     elif decoder == "lookup-projected":
         _append_projected_decoder_xor(
@@ -80,11 +81,13 @@ def build_architecture_fused_conversion(
         )
     else:
         raise ValueError(
-            "decoder must be lookup, lookup-projected, crt-inverse, or crt-kogge-stone"
+            "decoder must be lookup, lookup-projected, crt-inverse, crt-kogge-stone, "
+            "or crt-wallace-kogge-stone"
         )
     circuit.name = f"C_sparse_A_architecture_{decoder}_{weighted_sum_backend}"
     circuit.metadata = {
         **(circuit.metadata or {}),
+        "decoder": decoder,
         "reduction_backend": reduction_backend,
         "reduction_cleanup": reduction_cleanup,
     }

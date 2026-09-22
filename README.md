@@ -111,10 +111,15 @@ conversion, `wallace-qfa2`, `lookup`, `cuccaro`, `local`.
 | --- | --- |
 | `--local-synthesis` | `explicit`: controlled constant additions using Cuccaro; `explicit-fourier`: shared Fourier additions; `explicit-fourier-history`: retain overflow history for outer uncomputation; `explicit-register`: whole-register Cuccaro arithmetic; `explicit-register-sklansky`: whole-register Sklansky arithmetic |
 | `--weighted-sum` | `wallace-qfa2`: carry-save tree with final Sklansky sum; `cuccaro`: balanced ripple-adder reference tree |
-| `--decoder` | `lookup`: full promised-domain table; `lookup-projected`: certified injective projection of that table's keys; `crt-inverse`: arithmetic decoder using Sklansky sums; `crt-kogge-stone`: arithmetic decoder using Kogge–Stone sums |
+| `--decoder` | `lookup`: full promised-domain table; `lookup-projected`: certified injective projection of that table's keys; `crt-inverse`: arithmetic decoder using Sklansky sums; `crt-kogge-stone`: arithmetic decoder using Kogge–Stone sum trees; `crt-wallace-kogge-stone`: carry-save CRT decoder with final Kogge–Stone additions |
 | `--reduction` | `cuccaro`: threshold comparisons and controlled subtractions; `prefix`: threshold flags, carry-save correction and prefix sum |
 | `--cleanup` | `local`: clear internal reduction work immediately; `deferred`: retain it until the surrounding compute-copy-uncompute clears it |
 | `--lookup-entry-limit` | Maximum enumerated input-decoder table size; default 100000 for both lookup decoders |
+
+The optional `crt-wallace-kogge-stone` decoder replaces both CRT sum trees
+with Wallace/QFA2 compression followed by a final Kogge–Stone addition.
+It preserves coherent input cleanup and has O(log n) logical depth with
+sufficient all-to-all workspace. See [derivation, tests and measurements](docs/carry_save_decoder.md).
 
 The general `C` and `A` use their existing explicit carry-save/Kogge–Stone
 implementation. Sparse-only options are rejected for the general algorithm.

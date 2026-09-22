@@ -81,7 +81,9 @@ class GeneralTransformTests(unittest.TestCase):
     def test_sparse_coherent_all_arithmetic_variants(self):
         """Check sparse input promises with general post-QFT decoding."""
         for w, decoder, backend in product(
-            (0, 1, 2), ("lookup", "crt-inverse", "crt-kogge-stone"), ("wallace-qfa2", "cuccaro")
+            (0, 1, 2),
+            ("lookup", "crt-inverse", "crt-kogge-stone", "crt-wallace-kogge-stone"),
+            ("wallace-qfa2", "cuccaro"),
         ):
             config = SparseQFTConfig.from_moduli((2, 3), w=w)
             circuit = build_sparse_coherent_qft(

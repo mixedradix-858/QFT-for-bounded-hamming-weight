@@ -23,6 +23,7 @@ from mixed_radix_qft.circuits.comparators import (
     comparator_workspace_size,
 )
 from mixed_radix_qft.circuits.fanout import _append_controlled_binary_constant, _fanout_to_targets
+from mixed_radix_qft.circuits.linear_sum import raw_weighted_sum
 from mixed_radix_qft.config import SparseQFTConfig
 
 
@@ -78,19 +79,27 @@ class CRTInverseDecoderBlock:
     quotient_bound: int
     partial_count: int
     prefix: str
+    sum_backend: str = "prefix-tree"
 
 
 def build_crt_inverse_decoder_block(
-    config: SparseQFTConfig, prefix: str = "sklansky"
+    config: SparseQFTConfig, prefix: str = "sklansky", *, sum_backend: str = "prefix-tree"
 ) -> CRTInverseDecoderBlock:
     """Compute r=sum_j (m/m_j)*y_j mod m for valid eta fields y_j<m_j.
 
     Preserve Y and retain intermediate work for outer copy-uncompute.
     This eta decoder is not the ordinary CRT inverse used after the QFT.
+    With wallace-qfa2, both multioperand sums use reversible carry-save
+    compression and one final Kogge-Stone addition each. The entire decoder
+    then has O(log n) logical depth, with sufficient all-to-all workspace.
     """
     config.validate()
     if prefix not in {"sklansky", "kogge-stone"}:
         raise ValueError("prefix must be sklansky or kogge-stone")
+    if sum_backend not in {"prefix-tree", "wallace-qfa2"}:
+        raise ValueError("sum_backend must be prefix-tree or wallace-qfa2")
+    if sum_backend == "wallace-qfa2" and prefix != "kogge-stone":
+        raise ValueError("wallace-qfa2 decoder requires the kogge-stone final adder")
     y_register = QuantumRegister(config.q_y, "y")
     circuit = QuantumCircuit(y_register, name="Dec_CRT_inverse")
     modulus_product = config.crt_modulus
@@ -104,14 +113,19 @@ def build_crt_inverse_decoder_block(
             terms.append((y_register[offset + bit], factor << bit))
         offset += width
     sum_width = max(1, maximum_sum.bit_length())
-    partials = QuantumRegister(len(terms) * sum_width, "crt_partial")
-    circuit.add_register(partials)
-    partial_registers: list[tuple[Qubit, ...]] = []
-    for term_index, (control, value) in enumerate(terms):
-        partial = tuple((partials[term_index * sum_width + bit] for bit in range(sum_width)))
-        _append_controlled_binary_constant(circuit, control, partial, value)
-        partial_registers.append(partial)
-    exact_sum = _append_prefix_sum_tree(circuit, partial_registers, "crt_weighted", prefix)
+    if sum_backend == "wallace-qfa2":
+        exact_sum = raw_weighted_sum(
+            circuit, [control for control, _ in terms], [value for _, value in terms], sum_width
+        )
+    else:
+        partials = QuantumRegister(len(terms) * sum_width, "crt_partial")
+        circuit.add_register(partials)
+        partial_registers: list[tuple[Qubit, ...]] = []
+        for term_index, (control, value) in enumerate(terms):
+            partial = tuple((partials[term_index * sum_width + bit] for bit in range(sum_width)))
+            _append_controlled_binary_constant(circuit, control, partial, value)
+            partial_registers.append(partial)
+        exact_sum = _append_prefix_sum_tree(circuit, partial_registers, "crt_weighted", prefix)
     quotient_bound = maximum_sum // modulus_product
     quotient_multiple: tuple[Qubit, ...] | None = None
     if quotient_bound:
@@ -147,18 +161,25 @@ def build_crt_inverse_decoder_block(
                 (threshold_index + 1) * modulus_product,
                 workspace,
             )
-        multiples = QuantumRegister(quotient_bound * sum_width, "crt_modulus_multiples")
-        circuit.add_register(multiples)
-        multiple_registers: list[tuple[Qubit, ...]] = []
-        for threshold_index, flag in enumerate(flags):
-            multiple = tuple(
-                (multiples[threshold_index * sum_width + bit] for bit in range(sum_width))
+        if sum_backend == "wallace-qfa2":
+            quotient_multiple = tuple(
+                raw_weighted_sum(
+                    circuit, list(flags), [modulus_product] * quotient_bound, sum_width
+                )
             )
-            _append_controlled_binary_constant(circuit, flag, multiple, modulus_product)
-            multiple_registers.append(multiple)
-        quotient_multiple = _append_prefix_sum_tree(
-            circuit, multiple_registers, "crt_quotient", prefix
-        )
+        else:
+            multiples = QuantumRegister(quotient_bound * sum_width, "crt_modulus_multiples")
+            circuit.add_register(multiples)
+            multiple_registers: list[tuple[Qubit, ...]] = []
+            for threshold_index, flag in enumerate(flags):
+                multiple = tuple(
+                    (multiples[threshold_index * sum_width + bit] for bit in range(sum_width))
+                )
+                _append_controlled_binary_constant(circuit, flag, multiple, modulus_product)
+                multiple_registers.append(multiple)
+            quotient_multiple = _append_prefix_sum_tree(
+                circuit, multiple_registers, "crt_quotient", prefix
+            )
     remainder = QuantumRegister(sum_width, "crt_remainder")
     circuit.add_register(remainder)
     if quotient_multiple is None:
@@ -182,6 +203,7 @@ def build_crt_inverse_decoder_block(
         quotient_bound=quotient_bound,
         partial_count=len(terms),
         prefix=prefix,
+        sum_backend=sum_backend,
     )
 
 
@@ -191,9 +213,11 @@ def _append_crt_inverse_decoder_xor(
     target_x: Sequence[Qubit],
     config: SparseQFTConfig,
     prefix: str,
+    *,
+    sum_backend: str = "prefix-tree",
 ) -> int:
     """Append arithmetic inverse CRT, XOR it into X, and clean all work."""
-    block = build_crt_inverse_decoder_block(config, prefix=prefix)
+    block = build_crt_inverse_decoder_block(config, prefix=prefix, sum_backend=sum_backend)
     work_width = block.circuit.num_qubits - len(source_y)
     work = QuantumRegister(work_width, "dec_crt_work")
     circuit.add_register(work)
